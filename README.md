@@ -2,13 +2,15 @@
 
 > A modern, production-ready developer portfolio showcasing full-stack expertise with cutting-edge technologies, enterprise-grade security, and beautiful design.
 
+🔗 **Live Demo:** [https://kartiksportfolio.vercel.app](https://kartiksportfolio.vercel.app)
+
 [![Next.js](https://img.shields.io/badge/Next.js-16.1.1-black?logo=next.js)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React-19.2.3-blue?logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?logo=tailwind-css)](https://tailwindcss.com)
 [![Firebase](https://img.shields.io/badge/Firebase-Firestore-orange?logo=firebase)](https://firebase.google.com)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Vercel](https://img.shields.io/badge/Deployed-Vercel-000000?logo=vercel)](https://vercel.com)
+[![Vercel](https://img.shields.io/badge/Deployed-Vercel-000000?logo=vercel)](https://kartiksportfolio.vercel.app)
 
 ---
 
@@ -23,13 +25,16 @@
 - **Accessibility-Focused** - WCAG AA/AAA compliant
 
 ### 🔐 Security
-- **Content Security Policy (CSP)** headers configured
-- **HTTP Security Headers** - 8 different security headers implemented
-- **Rate Limiting** - 10 requests/minute per IP protection
-- **Input Sanitization** - HTML stripping, validation on all form inputs
+- **Content Security Policy (CSP)** - A+ grade with strict directives (no unsafe-inline for scripts)
+- **HTTP Security Headers** - 8+ security headers implemented (HSTS, X-Frame-Options, etc.)
+- **Rate Limiting** - Upstash Redis: 5 requests/hour per IP protection
+- **Input Sanitization** - DOMPurify XSS prevention on all form inputs
+- **Input Validation** - RFC-compliant email validation with length checks
 - **CSRF Protection** - Origin validation on API endpoints
+- **CORS Security** - Explicit origin whitelisting (no wildcards)
 - **Environment Security** - No hardcoded secrets, proper variable management
 - **Server-Side Firebase** - Secure backend integration with Firestore
+- **Secure Deployment** - Vercel with automatic SSL/TLS, build logs protected
 
 ### ⚡ Performance
 - **Next.js 16** with Turbopack for blazing fast builds
@@ -411,7 +416,7 @@ Passionate about building elegant, secure, and performant web applications. Spec
 
 ### 🔗 Let's Connect
 
-- **Portfolio**: [latest-portfolio.vercel.app](https://latest-portfolio.vercel.app)
+- **Portfolio**: [kartiksportfolio.vercel.app](https://kartiksportfolio.vercel.app)
 - **GitHub**: [@retarduser404](https://github.com/retarduser404)
 - **LinkedIn**: [Kartik Pathak](https://www.linkedin.com/in/kartik-pathak-379959269/)
 - **Email**: [kartikpathak883@gmail.com](mailto:kartikpathak883@gmail.com)
@@ -469,9 +474,9 @@ If you found this portfolio helpful or inspiring, please consider:
 
 ### Built with ❤️ by Kartik Pathak
 
-*Enterprise-grade portfolio • Production-ready • Security-first*
+*Enterprise-grade portfolio • Production-ready • Security-first (CSP A+ Grade)*
 
-**[🚀 Live Demo](https://latest-portfolio.vercel.app)** • **[📧 Contact Me](mailto:kartikpathak883@gmail.com)** • **[🐙 GitHub](https://github.com/retarduser404)**
+**[🚀 Live Demo](https://kartiksportfolio.vercel.app)** • **[📧 Contact Me](mailto:kartikpathak883@gmail.com)** • **[🐙 GitHub](https://github.com/retarduser404/latest-portfolio)**
 
 ---
 

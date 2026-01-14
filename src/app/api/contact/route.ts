@@ -1,14 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
-// Lazy import firebase-admin inside the handler to avoid crashing the dev server
-// if optional native deps are missing. We'll attempt to import at request time.
-// import is done below in the POST handler.
+import validator from 'validator';
+import DOMPurify from 'isomorphic-dompurify';
 
-// Email validation regex
+// Rate limiting setup (optional: only if UPSTASH env vars are set)
+let ratelimit: any = null;
+try {
+  const upstashUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  
+  if (upstashUrl && upstashToken) {
+    const { Ratelimit } = require('@upstash/ratelimit');
+    const { Redis } = require('@upstash/redis');
+    
+    const redis = new Redis({
+      url: upstashUrl,
+      token: upstashToken,
+    });
+    
+    ratelimit = new Ratelimit({
+      redis: redis,
+      limiter: Ratelimit.slidingWindow(5, '1 h'), // 5 requests per hour per IP
+    });
+  }
+} catch (err) {
+  console.warn('[RATE LIMIT] Upstash not configured, rate limiting disabled');
+}
+
+// Email validation
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const FORMSPREE_ID = process.env.FORMSPREE_ID || 'mqeeakbd';
 
 // Allowed origins for form POST (comma-separated env or defaults)
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://latest-portfolio.vercel.app').split(',').map(s => s.trim());
+// Supports wildcard patterns like https://*.vercel.app
+const rawAllowedOrigins = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://kartiksportfolio.vercel.app';
+const ALLOWED_ORIGIN_PATTERNS: Array<string | RegExp> = rawAllowedOrigins
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean)
+  .map(p => {
+    if (p.includes('*')) {
+      const re = '^' + p.split('*').map(part => part.replace(/[.*+?^${}()|[\\]\\/]/g, '\\$&')).join('.*') + '$';
+      return new RegExp(re);
+    }
+    return p;
+  });
 
 // Simple in-memory rate limiter (per-IP) — suitable for single-instance dev/testing
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
@@ -18,21 +53,44 @@ const rateMap: Map<string, { count: number; expires: number }> = new Map();
 // Sanitize input to prevent injection attacks
 function sanitizeInput(input: string): string {
   if (!input || typeof input !== 'string') return '';
-  // Remove HTML tags
-  const stripped = input.replace(/<[^>]*>/g, '');
+  // Use DOMPurify to remove any malicious HTML/script tags
+  const purified = DOMPurify.sanitize(input, { ALLOWED_TAGS: [] });
   // Collapse whitespace and trim
-  const collapsed = stripped.replace(/\s+/g, ' ').trim();
+  const collapsed = purified.replace(/\s+/g, ' ').trim();
   return collapsed.slice(0, 5000); // Limit to 5000 chars
 }
 
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting if Upstash is configured
+    if (ratelimit) {
+      const ip = request.headers.get('x-forwarded-for') || 
+                 request.headers.get('x-real-ip') || 
+                 'unknown';
+      const { success, pending, limit, reset, remaining } = await ratelimit.limit(ip);
+      
+      if (!success) {
+        console.warn(`[RATE LIMIT] IP ${ip} exceeded limit`);
+        return NextResponse.json(
+          { error: 'Too many requests. Please try again later.' },
+          { status: 429 }
+        );
+      }
+    }
+
     // Basic origin/referer check to prevent CSRF from unknown origins
     const origin = request.headers.get('origin') || request.headers.get('referer') || '';
+    const rawAllowedOrigins = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://kartiksportfolio.vercel.app';
+    const allowedOrigins = rawAllowedOrigins
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    
     if (origin) {
-      const isAllowed = ALLOWED_ORIGINS.some(o => origin.startsWith(o));
+      const isAllowed = allowedOrigins.some(o => origin === o || origin.startsWith(o));
       if (!isAllowed) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        console.warn(`[CONTACT API] Origin rejected: ${origin}. Allowed: ${rawAllowedOrigins}`);
+        return NextResponse.json({ error: 'Forbidden - origin not allowed' }, { status: 403 });
       }
     }
 
@@ -61,28 +119,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+
     // Sanitize inputs
     const sanitizedName = sanitizeInput(name);
     const sanitizedEmail = sanitizeInput(email).toLowerCase();
     const sanitizedMessage = sanitizeInput(message);
 
-    // Validate email format
-    if (!EMAIL_REGEX.test(sanitizedEmail)) {
+    // Validate email format using validator library
+    if (!validator.isEmail(sanitizedEmail)) {
       return NextResponse.json(
         { error: 'Invalid email format' },
         { status: 400 }
       );
     }
 
-    // Validate name and message length
-    if (sanitizedName.length < 2 || sanitizedName.length > 100) {
+    // Validate name length
+    if (!validator.isLength(sanitizedName, { min: 2, max: 100 })) {
       return NextResponse.json(
         { error: 'Name must be between 2 and 100 characters' },
         { status: 400 }
       );
     }
 
-    if (sanitizedMessage.length < 10 || sanitizedMessage.length > 5000) {
+    // Validate message length
+    if (!validator.isLength(sanitizedMessage, { min: 10, max: 5000 })) {
       return NextResponse.json(
         { error: 'Message must be between 10 and 5000 characters' },
         { status: 400 }
@@ -138,7 +198,7 @@ export async function POST(request: NextRequest) {
             service: firestoreSuccess ? 'Firestore + Formspree' : 'Formspree',
             stored: firestoreSuccess,
           },
-          { status: 200 }
+          { status: 200, headers: { 'Access-Control-Allow-Origin': origin || '*' } }
         );
       } else {
         const errorText = await formspreeResponse.text();
@@ -159,7 +219,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(
           { error: 'Failed to send message. Please try again.' },
-          { status: 500 }
+          { status: 500, headers: { 'Access-Control-Allow-Origin': origin || '*' } }
         );
       }
     } catch (error) {
@@ -180,7 +240,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(
         { error: 'Internal server error. Please try again later.' },
-        { status: 500 }
+        { status: 500, headers: { 'Access-Control-Allow-Origin': origin || '*' } }
       );
     }
   } catch (error) {
@@ -190,4 +250,22 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+}
+
+// Handle CORS preflight requests
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin') || '';
+  const allowed = ALLOWED_ORIGIN_PATTERNS.some(pattern => {
+    if (pattern instanceof RegExp) return pattern.test(origin);
+    return origin === pattern || origin.startsWith(pattern);
+  });
+
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': allowed ? origin : '',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
 }

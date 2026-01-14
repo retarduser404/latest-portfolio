@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "X-Frame-Options",
-            value: "DENY",
+            value: "SAMEORIGIN",
           },
           {
             key: "X-XSS-Protection",
@@ -52,7 +52,18 @@ const nextConfig: NextConfig = {
           // - Includes WebSocket for DevTools hot reload in development
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.googletagmanager.com *.google-analytics.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com data:; img-src 'self' data: https: *.google-analytics.com *.googletagmanager.com; connect-src 'self' formspree.io *.vercel.com *.google-analytics.com *.googletagmanager.com ws: wss:; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' https://www.googletagmanager.com https://www.google-analytics.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: https: blob:",
+              "font-src 'self' https://fonts.gstatic.com",
+              "connect-src 'self' https://api.formspree.io https://firestore.googleapis.com https://www.google-analytics.com",
+              "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "object-src 'none'",
+            ].join('; '),
           },
           {
             key: "Strict-Transport-Security",
