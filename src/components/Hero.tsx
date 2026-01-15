@@ -50,12 +50,12 @@ export default function Hero() {
           {/* Name */}
           <motion.h1
             variants={itemVariants}
-            className="text-6xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight text-accent"
+            className="text-3xl sm:text-4xl md:text-6xl lg:text-8xl font-bold mb-4 md:mb-6 leading-tight text-accent px-2 sm:px-0"
           >
             <motion.span
-              initial={{ clipPath: 'inset(0 100% 0 0)' }}
-              animate={{ clipPath: 'inset(0 0% 0 0)' }}
-              transition={{ duration: 1, ease: 'easeOut' }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
             >
               KARTIK PATHAK
             </motion.span>
