@@ -37,10 +37,13 @@ const ALLOWED_ORIGIN_PATTERNS: Array<string | RegExp> = rawAllowedOrigins
   .split(',')
   .map(s => s.trim())
   .filter(Boolean)
-  .map(p => {
+  .map((p): string | RegExp => {
     if (p.includes('*')) {
-      const re = '^' + p.split('*').map(part => part.replace(/[.*+?^${}()|[\\]\\/]/g, '\\$&')).join('.*') + '$';
-      return new RegExp(re);
+      // Convert wildcard to regex: https://*.vercel.app -> https://.*\.vercel\.app
+      const regexString = p
+        .replace(/\./g, '\\.')    // Escape dots
+        .replace(/\*/g, '.*');     // Convert * to .*
+      return new RegExp(`^${regexString}$`);
     }
     return p;
   });
