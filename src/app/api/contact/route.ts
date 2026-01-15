@@ -39,8 +39,7 @@ const ALLOWED_ORIGIN_PATTERNS: Array<string | RegExp> = rawAllowedOrigins
   .filter(Boolean)
   .map(p => {
     if (p.includes('*')) {
-      const re = '^' + p.split('*').map(part => part.replace(/[.*+?^${}()|[\\]\\/]/g, '\\$&')).join('.*') + '$';
-      return new RegExp(re);
+        const re = '^' + p.split('*').map(part => part.replace(/[.*+?^${}()|[\\\]]/g, '\\$&')).join('.*') + '$';      return new RegExp(re);
     }
     return p;
   });
