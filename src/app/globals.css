@@ -43,13 +43,13 @@ select:focus-visible {
 html, body {
   width: 100%;
   height: 100%;
-  background-color: #0B0F0E !important;
+  background-color: ##FFFFFF !important;
   background-image: none !important;
 }
 
 body {
-  background-color: #0B0F0E !important;
-  color: #E6EDE9;
+  background-color: ##FFFFFF !important;
+  color: ##000000;
   font-family: 'Inter', system-ui, sans-serif;
   overflow-x: hidden;
 }
