@@ -39,10 +39,8 @@ const ALLOWED_ORIGIN_PATTERNS: Array<string | RegExp> = rawAllowedOrigins
   .filter(Boolean)
   .map(p => {
     if (p.includes('*')) {
-      // Convert wildcard pattern to regex: https://*.vercel.app -> https://.*\.vercel\.app
-      const escaped = p.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
-      const pattern = escaped.replace(/\\\*/g, '.*');
-      return new RegExp(`^${pattern}$`);
+      const re = '^' + p.split('*').map(part => part.replace(/[.*+?^${}()|[\\]\\/]/g, '\\$&')).join('.*') + '$';
+      return new RegExp(re);
     }
     return p;
   });
